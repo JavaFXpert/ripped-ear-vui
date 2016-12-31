@@ -22,10 +22,21 @@ let bodyParser = require('body-parser');
 let app = express();
 app.use(bodyParser.json({type: 'application/json'}));
 
-const NAME_ACTION = 'random_interval';
-const TYPE_ARGUMENT = 'type';
-
 // [START RippedEar]
+const RANDOM_INTERVAL_ACTION = 'random_interval';
+const ASC_DESC_HARM_ARG = 'asc_desc_harm';
+const INTERVAL_RANGE = 13; // Generated intervals are from unison to octave inclusive
+const INTERVAL_LOWER_BOUND = 55; // MIDI note number of lowest note to be played
+const INTERVAL_UPPER_BOUND = 78; // MIDI note number of highest note to be played
+const AUDIO_BASE_URL = 'https://storage.googleapis.com/musicnotes/';
+
+// Offset from filenames in sound files to MIDI values
+// TODO: Renumber filenames to match MIDI numbers
+const PITCH_OFFSET = 20;
+
+// Holds the most recent interval played for comparison
+var mostRecentInterval = -1;
+
 app.post('/', function (req, res) {
   const assistant = new Assistant({request: req, response: res});
   console.log('Request headers: ' + JSON.stringify(req.headers));
@@ -33,12 +44,27 @@ app.post('/', function (req, res) {
 
   // Generate a random interval
   function randomInterval (assistant) {
-    //let type = assistant.getArgument(TYPE_ARGUMENT);
-    assistant.tell('<speak>Here is the interval <audio src="https://storage.googleapis.com/musicnotes/40.wav"/><audio src="https://storage.googleapis.com/musicnotes/44.wav"/></speak>');
+    // unison is 0 and octave is 12
+    let intervalSize = Math.trunc(Math.random() * INTERVAL_RANGE);
+
+    let intervalLowerPitch = Math.trunc(Math.random() * (INTERVAL_UPPER_BOUND - INTERVAL_LOWER_BOUND - intervalSize + 1)) +
+        INTERVAL_LOWER_BOUND;
+
+    let intervalUpperPitch = intervalLowerPitch + intervalSize;
+
+    let lowerPitchUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '.wav';
+    let upperPitchUrl = AUDIO_BASE_URL + (intervalUpperPitch - PITCH_OFFSET) + '.wav';
+
+    let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
+    console.log('asc_desc_harm: ' + asc_desc_harm);
+    assistant.ask('<speak>Here is the interval <audio src=\'' +  lowerPitchUrl + '\'/><audio src=\'' +
+        upperPitchUrl + '\'/></speak>', ['Please say the interval you heard']);
+    //assistant.ask('<speak>Here is the interval <audio src=\'' +  lowerPitchUrl + '\'/><audio src=\'' +
+    //    upperPitchUrl + '\'/></speak>');
   }
 
   let actionMap = new Map();
-  actionMap.set(NAME_ACTION, randomInterval);
+  actionMap.set(RANDOM_INTERVAL_ACTION, randomInterval);
 
   assistant.handleRequest(actionMap);
 });
