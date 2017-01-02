@@ -15,6 +15,12 @@
 runtime: nodejs
 env: flex
 # [END runtime]
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 1
+  cool_down_period_sec: 60 # default value
+  cpu_utilization:
+    target_utilization: 0.5
 
 skip_files:
 - ^node_modules/(.*/)?

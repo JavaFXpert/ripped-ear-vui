@@ -57,9 +57,9 @@ const OCTAVE = 12;
 const PITCH_OFFSET = 20;
 
 // Holds the most recent interval played for comparison
-var mostRecentIntervalSize = -1;
-var mostRecentLowerPitchUrl = '';
-var mostRecentUpperPitchUrl = '';
+let mostRecentIntervalSize = -1;
+let mostRecentLowerPitchUrl = '';
+let mostRecentUpperPitchUrl = '';
 
 app.post('/', function (req, res) {
   const assistant = new Assistant({request: req, response: res});
@@ -73,7 +73,7 @@ app.post('/', function (req, res) {
 
     // store the inverval for when user attempts to name it
     mostRecentIntervalSize = intervalSize;
-
+    console.log("mostRecentIntervalSize: " + mostRecentIntervalSize);
     let intervalLowerPitch = Math.trunc(Math.random() * (INTERVAL_UPPER_BOUND - INTERVAL_LOWER_BOUND - intervalSize + 1)) +
         INTERVAL_LOWER_BOUND;
 
@@ -81,9 +81,11 @@ app.post('/', function (req, res) {
 
     let lowerPitchUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '.wav';
     mostRecentLowerPitchUrl = lowerPitchUrl;
+      console.log("mostRecentLowerPitchUrl: " + mostRecentLowerPitchUrl);
 
     let upperPitchUrl = AUDIO_BASE_URL + (intervalUpperPitch - PITCH_OFFSET) + '.wav';
     mostRecentUpperPitchUrl = upperPitchUrl;
+      console.log("mostRecentUpperPitchUrl: " + mostRecentUpperPitchUrl);
 
     let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
     console.log('asc_desc_harm: ' + asc_desc_harm);
