@@ -51,20 +51,23 @@ const MINOR_SEVENTH = 10;
 const MAJOR_SEVENTH = 11;
 const OCTAVE = 12;
 
+const NUM_ATTEMPTS_ALLOWED = 3;
+
 
 // Offset from filenames in sound files to MIDI values
 // TODO: Renumber filenames to match MIDI numbers
 const PITCH_OFFSET = 20;
 
-// Holds the most recent interval played for comparison
-let mostRecentIntervalSize = -1;
-let mostRecentLowerPitchUrl = '';
-let mostRecentUpperPitchUrl = '';
 
 app.post('/', function (req, res) {
   const assistant = new Assistant({request: req, response: res});
   console.log('Request headers: ' + JSON.stringify(req.headers));
   console.log('Request body: ' + JSON.stringify(req.body));
+
+  // Holds the most recent interval played for comparison
+  assistant.data.mostRecentIntervalSize = -1;
+  assistant.data.mostRecentLowerPitchUrl = '';
+  assistant.data.mostRecentUpperPitchUrl = '';
 
   // Generate a random interval
   function randomInterval (assistant) {
@@ -72,28 +75,28 @@ app.post('/', function (req, res) {
     let intervalSize = Math.trunc(Math.random() * INTERVAL_RANGE);
 
     // store the inverval for when user attempts to name it
-    mostRecentIntervalSize = intervalSize;
-    console.log("mostRecentIntervalSize: " + mostRecentIntervalSize);
+    assistant.data.mostRecentIntervalSize = intervalSize;
+    console.log("mostRecentIntervalSize: " + assistant.data.mostRecentIntervalSize);
     let intervalLowerPitch = Math.trunc(Math.random() * (INTERVAL_UPPER_BOUND - INTERVAL_LOWER_BOUND - intervalSize + 1)) +
         INTERVAL_LOWER_BOUND;
 
     let intervalUpperPitch = intervalLowerPitch + intervalSize;
 
     let lowerPitchUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '.wav';
-    mostRecentLowerPitchUrl = lowerPitchUrl;
-      console.log("mostRecentLowerPitchUrl: " + mostRecentLowerPitchUrl);
+    assistant.data.mostRecentLowerPitchUrl = lowerPitchUrl;
+    console.log("mostRecentLowerPitchUrl: " + assistant.data.mostRecentLowerPitchUrl);
 
     let upperPitchUrl = AUDIO_BASE_URL + (intervalUpperPitch - PITCH_OFFSET) + '.wav';
-    mostRecentUpperPitchUrl = upperPitchUrl;
-      console.log("mostRecentUpperPitchUrl: " + mostRecentUpperPitchUrl);
+    assistant.data.mostRecentUpperPitchUrl = upperPitchUrl;
+    console.log("mostRecentUpperPitchUrl: " + assistant.data.mostRecentUpperPitchUrl);
 
     let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
     console.log('asc_desc_harm: ' + asc_desc_harm);
-    assistant.setContext(INTERVAL_PLAYED_CONTEXT);
+    assistant.data.numIncorrect = 0;
+
+    assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
     assistant.ask('<speak>Here is the interval <audio src=\'' +  lowerPitchUrl + '\'/><audio src=\'' +
         upperPitchUrl + '\'/></speak>', ['Please say the interval you heard']);
-    //assistant.ask('<speak>Here is the interval <audio src=\'' +  lowerPitchUrl + '\'/><audio src=\'' +
-    //    upperPitchUrl + '\'/></speak>');
   }
 
   // Validate that the user said the correct random interval
@@ -101,28 +104,53 @@ app.post('/', function (req, res) {
     let interval = assistant.getArgument(INTERVAL_ARG);
     console.log('interval: ' + interval);
 
-    if ((interval.toLowerCase() === 'unison' && mostRecentIntervalSize == UNISON) ||
-        (interval.toLowerCase() === 'minor second' && mostRecentIntervalSize == MINOR_SECOND) ||
-        (interval.toLowerCase() === 'major second' && mostRecentIntervalSize == MAJOR_SECOND) ||
-        (interval.toLowerCase() === 'minor third' && mostRecentIntervalSize == MINOR_THIRD) ||
-        (interval.toLowerCase() === 'major third' && mostRecentIntervalSize == MAJOR_THIRD) ||
-        (interval.toLowerCase() === 'perfect fourth' && mostRecentIntervalSize == PERFECT_FOURTH) ||
-        (interval.toLowerCase() === 'tritone' && mostRecentIntervalSize == TRITONE) ||
-        (interval.toLowerCase() === 'perfect fifth' && mostRecentIntervalSize == PERFECT_FIFTH) ||
-        (interval.toLowerCase() === 'minor sixth' && mostRecentIntervalSize == MINOR_SIXTH) ||
-        (interval.toLowerCase() === 'major sixth' && mostRecentIntervalSize == MAJOR_SIXTH) ||
-        (interval.toLowerCase() === 'minor seventh' && mostRecentIntervalSize == MINOR_SEVENTH) ||
-        (interval.toLowerCase() === 'major seventh' && mostRecentIntervalSize == MAJOR_SEVENTH) ||
-        (interval.toLowerCase() === 'octave' && mostRecentIntervalSize == OCTAVE)) {
-      assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT);
+    if ((interval.toLowerCase() === 'unison' && assistant.data.mostRecentIntervalSize == UNISON) ||
+        (interval.toLowerCase() === 'minor second' && assistant.data.mostRecentIntervalSize == MINOR_SECOND) ||
+        (interval.toLowerCase() === 'major second' && assistant.data.mostRecentIntervalSize == MAJOR_SECOND) ||
+        (interval.toLowerCase() === 'minor third' && assistant.data.mostRecentIntervalSize == MINOR_THIRD) ||
+        (interval.toLowerCase() === 'major third' && assistant.data.mostRecentIntervalSize == MAJOR_THIRD) ||
+        (interval.toLowerCase() === 'perfect fourth' && assistant.data.mostRecentIntervalSize == PERFECT_FOURTH) ||
+        (interval.toLowerCase() === 'tritone' && assistant.data.mostRecentIntervalSize == TRITONE) ||
+        (interval.toLowerCase() === 'perfect fifth' && assistant.data.mostRecentIntervalSize == PERFECT_FIFTH) ||
+        (interval.toLowerCase() === 'minor sixth' && assistant.data.mostRecentIntervalSize == MINOR_SIXTH) ||
+        (interval.toLowerCase() === 'major sixth' && assistant.data.mostRecentIntervalSize == MAJOR_SIXTH) ||
+        (interval.toLowerCase() === 'minor seventh' && assistant.data.mostRecentIntervalSize == MINOR_SEVENTH) ||
+        (interval.toLowerCase() === 'major seventh' && assistant.data.mostRecentIntervalSize == MAJOR_SEVENTH) ||
+        (interval.toLowerCase() === 'octave' && assistant.data.mostRecentIntervalSize == OCTAVE)) {
+      assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
       assistant.ask('<speak>You are correct, the interval is a ' + interval + '.  Ready for another one?</speak>',
           ['Are you ready for another interval?']);
 
     }
     else {
-      assistant.setContext(INTERVAL_PLAYED_CONTEXT);
-      assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + mostRecentLowerPitchUrl + '\'/><audio src=\'' +
-          mostRecentUpperPitchUrl + '\'/></speak>', ['Please tell me the interval you heard']);
+      assistant.data.numIncorrect ++;
+
+      if (assistant.data.numIncorrect < NUM_ATTEMPTS_ALLOWED) {
+        assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
+        assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + assistant.data.mostRecentLowerPitchUrl + '\'/><audio src=\'' +
+            assistant.data.mostRecentUpperPitchUrl + '\'/></speak>', ['Please tell me the interval you heard']);
+      }
+      else {
+          let correctIntervalName = "unknown";
+          switch (assistant.data.mostRecentIntervalSize) {
+              case UNISON: correctIntervalName = 'unison'; break;
+              case MINOR_SECOND: correctIntervalName = 'minor second'; break;
+              case MAJOR_SECOND: correctIntervalName = 'major second'; break;
+              case MINOR_THIRD: correctIntervalName = 'minor third'; break;
+              case MAJOR_THIRD: correctIntervalName = 'major third'; break;
+              case PERFECT_FOURTH: correctIntervalName = 'perfect fourth'; break;
+              case TRITONE: correctIntervalName = 'tritone'; break;
+              case PERFECT_FIFTH: correctIntervalName = 'perfect fifth'; break;
+              case MINOR_SIXTH: correctIntervalName = 'minor sixth'; break;
+              case MAJOR_SIXTH: correctIntervalName = 'major sixth'; break;
+              case MINOR_SEVENTH: correctIntervalName = 'minor seventh'; break;
+              case MAJOR_SEVENTH: correctIntervalName = 'major seventh'; break;
+              case OCTAVE: correctIntervalName = 'octave'; break;
+          }
+        assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
+        assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + assistant.data.mostRecentLowerPitchUrl + '\'/><audio src=\'' +
+            assistant.data.mostRecentUpperPitchUrl + '\'/> The interval is a ' + correctIntervalName + '.  Ready for another interval?</speak>');
+      }
     }
   }
 
