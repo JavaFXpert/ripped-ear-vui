@@ -117,8 +117,10 @@ app.post('/', function (req, res) {
         (interval.toLowerCase() === 'minor seventh' && assistant.data.mostRecentIntervalSize == MINOR_SEVENTH) ||
         (interval.toLowerCase() === 'major seventh' && assistant.data.mostRecentIntervalSize == MAJOR_SEVENTH) ||
         (interval.toLowerCase() === 'octave' && assistant.data.mostRecentIntervalSize == OCTAVE)) {
+
+      let aOrAn = interval.toLowerCase() === 'octave' ? "an" : "a";
       assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
-      assistant.ask('<speak>You are correct, the interval is a ' + interval + '.  Ready for another one?</speak>',
+      assistant.ask('<speak>You are correct, the interval is ' + aOrAn + ' ' + interval + '.  Ready for another one?</speak>',
           ['Are you ready for another interval?']);
 
     }
