@@ -141,7 +141,7 @@ app.post('/', function (req, res) {
               case MINOR_THIRD: correctIntervalName = 'minor third'; break;
               case MAJOR_THIRD: correctIntervalName = 'major third'; break;
               case PERFECT_FOURTH: correctIntervalName = 'perfect fourth'; break;
-              case TRITONE: correctIntervalName = 'tritone'; break;
+              case TRITONE: correctIntervalName = 'tri-tone'; break;
               case PERFECT_FIFTH: correctIntervalName = 'perfect fifth'; break;
               case MINOR_SIXTH: correctIntervalName = 'minor sixth'; break;
               case MAJOR_SIXTH: correctIntervalName = 'major sixth'; break;
