@@ -120,8 +120,8 @@ app.post('/', function (req, res) {
 
       let aOrAn = interval.toLowerCase() === 'octave' ? "an" : "a";
       assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
-      assistant.ask('<speak>You are correct, the interval is ' + aOrAn + ' ' + interval + '.  Ready for another one?</speak>',
-          ['Are you ready for another interval?']);
+      assistant.ask('<speak>You are correct, the interval is ' + aOrAn + ' ' + interval + '.  Let me know when you\'re ready for another, or if that\'s enough for now.</speak>',
+          ['Please let me know when you\'re ready for another interval, or if you\'ve had enough']);
 
     }
     else {
@@ -151,7 +151,7 @@ app.post('/', function (req, res) {
           }
         assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
         assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + assistant.data.mostRecentLowerPitchUrl + '\'/><audio src=\'' +
-            assistant.data.mostRecentUpperPitchUrl + '\'/> The interval is a ' + correctIntervalName + '.  Ready for another interval?</speak>');
+            assistant.data.mostRecentUpperPitchUrl + '\'/> The interval is a ' + correctIntervalName + '.  Please let me know when you\'re ready for another interval, or if you\'ve had enough.</speak>');
       }
     }
   }
