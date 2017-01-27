@@ -68,6 +68,7 @@ app.post('/', function (req, res) {
   assistant.data.mostRecentIntervalSize = -1;
   assistant.data.mostRecentLowerPitchUrl = '';
   assistant.data.mostRecentUpperPitchUrl = '';
+  assistant.data.desc = false;
 
   // Generate a random interval
   function randomInterval (assistant) {
@@ -91,12 +92,15 @@ app.post('/', function (req, res) {
     console.log("mostRecentUpperPitchUrl: " + assistant.data.mostRecentUpperPitchUrl);
 
     let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
-    console.log('asc_desc_harm: ' + asc_desc_harm);
+    //console.log('asc_desc_harm: ' + asc_desc_harm);
+
+    assistant.data.desc = Math.trunc(Math.random() * 2) == 1;
+
     assistant.data.numIncorrect = 0;
 
     assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
-    assistant.ask('<speak>Here is the interval <audio src=\'' +  lowerPitchUrl + '\'/><audio src=\'' +
-        upperPitchUrl + '\'/></speak>', ['Please say the interval you heard']);
+    assistant.ask('<speak>Here is the interval <audio src=\'' +  (assistant.data.desc ? upperPitchUrl : lowerPitchUrl) + '\'/><audio src=\'' +
+        (assistant.data.desc ? lowerPitchUrl : upperPitchUrl) + '\'/></speak>', ['Please say the interval you heard']);
   }
 
   // Validate that the user said the correct random interval
@@ -129,8 +133,8 @@ app.post('/', function (req, res) {
 
       if (assistant.data.numIncorrect < NUM_ATTEMPTS_ALLOWED) {
         assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
-        assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + assistant.data.mostRecentLowerPitchUrl + '\'/><audio src=\'' +
-            assistant.data.mostRecentUpperPitchUrl + '\'/></speak>', ['Please tell me the interval you heard']);
+        assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl) + '\'/><audio src=\'' +
+            (assistant.data.desc ? assistant.data.mostRecentLowerPitchUrl : assistant.data.mostRecentUpperPitchUrl)  + '\'/></speak>', ['Please tell me the interval you heard']);
       }
       else {
           let correctIntervalName = "unknown";
@@ -150,8 +154,8 @@ app.post('/', function (req, res) {
               case OCTAVE: correctIntervalName = 'octave'; break;
           }
         assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
-        assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + assistant.data.mostRecentLowerPitchUrl + '\'/><audio src=\'' +
-            assistant.data.mostRecentUpperPitchUrl + '\'/> The interval is a ' + correctIntervalName + '.  Please let me know when you\'re ready for another interval, or if you\'ve had enough.</speak>');
+        assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl)  + '\'/><audio src=\'' +
+            (assistant.data.desc ? assistant.data.mostRecentLowerPitchUrl : assistant.data.mostRecentUpperPitchUrl)  + '\'/> The interval is a ' + correctIntervalName + '.  Please let me know when you\'re ready for another interval, or if you\'ve had enough.</speak>');
       }
     }
   }
