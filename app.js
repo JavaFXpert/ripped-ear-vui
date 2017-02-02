@@ -231,7 +231,7 @@ app.post('/', function (req, res) {
               upperPitchSemitoneOffset = 9;
           }
           else if (triadInversion == SECOND_INVERSION) {
-              middlePitchSemitoneOffset = 4;
+              middlePitchSemitoneOffset = 5;
               upperPitchSemitoneOffset = 8;
           }
       }
