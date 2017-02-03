@@ -87,6 +87,7 @@ app.post('/', function (req, res) {
   assistant.data.mostRecentLowerPitchUrl = '';
   assistant.data.mostRecentUpperPitchUrl = '';
   assistant.data.desc = false;
+  assistant.data.harm = false;
 
   // =========== INTERVAL-RELATED CODE ==========
 
@@ -188,6 +189,7 @@ app.post('/', function (req, res) {
     assistant.data.mostRecentTriadLowerPitchUrl = '';
     assistant.data.mostRecentTriadMiddlePitchUrl = '';
     assistant.data.mostRecentTriadUpperPitchUrl = '';
+    assistant.data.mostRecentTriadHarmonicUrl = '';
 
     // Generate a random triad
     function randomTriad (assistant) {
@@ -272,18 +274,27 @@ app.post('/', function (req, res) {
       assistant.data.mostRecentTriadUpperPitchUrl = triadUpperPitchUrl;
       console.log("mostRecentTriadUpperPitchUrl: " + assistant.data.mostRecentTriadUpperPitchUrl);
 
+      let triadHarmonicUrl = AUDIO_BASE_URL + (triadLowerPitch - PITCH_OFFSET) + '-' +
+          (triadMiddlePitch - PITCH_OFFSET) + '-' + (triadUpperPitch - PITCH_OFFSET) + '.wav';
+      assistant.data.mostRecentTriadHarmonicUrl = triadHarmonicUrl;
+      console.log("mostRecentTriadHarmonicUrl: " + assistant.data.mostRecentTriadHarmonicUrl);
+
+      assistant.data.harm = Math.trunc(Math.random() * 2) == 1;
+
       assistant.data.numIncorrect = 0;
 
       assistant.setContext(TRIAD_PLAYED_CONTEXT, 5);
-      assistant.ask('<speak>Here is the triad <audio src=\'' +  triadLowerPitchUrl + '\'/><audio src=\'' +
-          triadMiddlePitchUrl + '\'/><audio src=\'' +
-          triadUpperPitchUrl + '\'/></speak>', ['Please say the triad quality, and inversion, that you heard']);
 
-        /*
-         assistant.ask('<speak>Here is the interval <audio src=\'' +  (assistant.data.desc ? upperPitchUrl : lowerPitchUrl) + '\'/><audio src=\'' +
-         (assistant.data.desc ? lowerPitchUrl : upperPitchUrl) + '\'/></speak>', ['Please say the interval you heard']);
+      if (assistant.data.harm) {
+          assistant.ask('<speak>Here is the triad played harmonically <audio src=\'' +  triadHarmonicUrl + '\'/></speak>',
+              ['Please say the triad quality, and inversion, that you heard']);
 
-         */
+      }
+      else {
+          assistant.ask('<speak>Here is the triad played melodically <audio src=\'' + triadLowerPitchUrl + '\'/><audio src=\'' +
+              triadMiddlePitchUrl + '\'/><audio src=\'' +
+              triadUpperPitchUrl + '\'/></speak>', ['Please say the triad quality, and inversion, that you heard']);
+      }
     }
 
     // Validate that the user identified the correct quality and inversion of the random triad
