@@ -91,45 +91,58 @@ app.post('/', function (req, res) {
 
   // =========== INTERVAL-RELATED CODE ==========
 
-  // Generate a random interval
-  function randomInterval (assistant) {
-    // unison is 0 and octave is 12
-    let intervalSize = Math.trunc(Math.random() * INTERVAL_RANGE);
+    // Generate a random interval
+    function randomInterval (assistant) {
+        // unison is 0 and octave is 12
+        let intervalSize = Math.trunc(Math.random() * INTERVAL_RANGE);
 
-    // store the inverval for when user attempts to name it
-    assistant.data.mostRecentIntervalSize = intervalSize;
-    console.log("mostRecentIntervalSize: " + assistant.data.mostRecentIntervalSize);
-    let intervalLowerPitch = Math.trunc(Math.random() * (PITCH_UPPER_BOUND - PITCH_LOWER_BOUND - intervalSize + 1)) +
-        PITCH_LOWER_BOUND;
+        // store the inverval for when user attempts to name it
+        assistant.data.mostRecentIntervalSize = intervalSize;
+        console.log("mostRecentIntervalSize: " + assistant.data.mostRecentIntervalSize);
+        let intervalLowerPitch = Math.trunc(Math.random() * (PITCH_UPPER_BOUND - PITCH_LOWER_BOUND - intervalSize + 1)) +
+            PITCH_LOWER_BOUND;
 
-    let intervalUpperPitch = intervalLowerPitch + intervalSize;
+        let intervalUpperPitch = intervalLowerPitch + intervalSize;
 
-    let lowerPitchUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '.wav';
-    assistant.data.mostRecentLowerPitchUrl = lowerPitchUrl;
-    console.log("mostRecentLowerPitchUrl: " + assistant.data.mostRecentLowerPitchUrl);
+        let lowerPitchUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '.wav';
+        assistant.data.mostRecentLowerPitchUrl = lowerPitchUrl;
+        console.log("mostRecentLowerPitchUrl: " + assistant.data.mostRecentLowerPitchUrl);
 
-    let upperPitchUrl = AUDIO_BASE_URL + (intervalUpperPitch - PITCH_OFFSET) + '.wav';
-    assistant.data.mostRecentUpperPitchUrl = upperPitchUrl;
-    console.log("mostRecentUpperPitchUrl: " + assistant.data.mostRecentUpperPitchUrl);
+        let upperPitchUrl = AUDIO_BASE_URL + (intervalUpperPitch - PITCH_OFFSET) + '.wav';
+        assistant.data.mostRecentUpperPitchUrl = upperPitchUrl;
+        console.log("mostRecentUpperPitchUrl: " + assistant.data.mostRecentUpperPitchUrl);
 
-    let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
-    //console.log('asc_desc_harm: ' + asc_desc_harm);
+        let intervalHarmonicUrl = AUDIO_BASE_URL + (intervalLowerPitch - PITCH_OFFSET) + '-' +
+            (intervalUpperPitch - PITCH_OFFSET) + '.wav';
+        assistant.data.mostRecentIntervalHarmonicUrl = intervalHarmonicUrl;
+        console.log("mostRecentIntervalHarmonicUrl: " + assistant.data.mostRecentIntervalHarmonicUrl);
 
-    assistant.data.desc = Math.trunc(Math.random() * 2) == 1;
+        let asc_desc_harm = assistant.getArgument(ASC_DESC_HARM_ARG);
+        //console.log('asc_desc_harm: ' + asc_desc_harm);
 
-    assistant.data.numIncorrect = 0;
+        assistant.data.desc = Math.trunc(Math.random() * 2) == 1;
+        assistant.data.harm = Math.trunc(Math.random() * 2) == 1;
 
-    assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
-    assistant.ask('<speak>Here is the interval <audio src=\'' +  (assistant.data.desc ? upperPitchUrl : lowerPitchUrl) + '\'/><audio src=\'' +
-        (assistant.data.desc ? lowerPitchUrl : upperPitchUrl) + '\'/></speak>', ['Please say the interval you heard']);
-  }
+        assistant.data.numIncorrect = 0;
 
-  // Validate that the user said the correct random interval
-  function validateInterval (assistant) {
-    let interval = assistant.getArgument(INTERVAL_ARG);
-    console.log('interval: ' + interval);
+        assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
 
-    if ((interval.toLowerCase() === 'unison' && assistant.data.mostRecentIntervalSize == UNISON) ||
+        if (assistant.data.harm) {
+            assistant.ask('<speak>Here is the interval played harmonically <audio src=\'' + intervalHarmonicUrl + '\'/></speak>',
+                ['Please say the interval you heard']);
+        }
+        else {
+            assistant.ask('<speak>Here is the interval played melodically <audio src=\'' + (assistant.data.desc ? upperPitchUrl : lowerPitchUrl) + '\'/><audio src=\'' +
+                (assistant.data.desc ? lowerPitchUrl : upperPitchUrl) + '\'/></speak>', ['Please say the interval you heard']);
+        }
+    }
+
+    // Validate that the user said the correct random interval
+    function validateInterval (assistant) {
+      let interval = assistant.getArgument(INTERVAL_ARG);
+      console.log('interval: ' + interval);
+
+      if ((interval.toLowerCase() === 'unison' && assistant.data.mostRecentIntervalSize == UNISON) ||
         (interval.toLowerCase() === 'minor second' && assistant.data.mostRecentIntervalSize == MINOR_SECOND) ||
         (interval.toLowerCase() === 'major second' && assistant.data.mostRecentIntervalSize == MAJOR_SECOND) ||
         (interval.toLowerCase() === 'minor third' && assistant.data.mostRecentIntervalSize == MINOR_THIRD) ||
@@ -143,21 +156,21 @@ app.post('/', function (req, res) {
         (interval.toLowerCase() === 'major seventh' && assistant.data.mostRecentIntervalSize == MAJOR_SEVENTH) ||
         (interval.toLowerCase() === 'octave' && assistant.data.mostRecentIntervalSize == OCTAVE)) {
 
-      let aOrAn = interval.toLowerCase() === 'octave' ? "an" : "a";
-      assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
-      assistant.ask('<speak>You are correct, the interval is ' + aOrAn + ' ' + interval + '.  Let me know when you\'re ready for another, or if that\'s enough for now.</speak>',
+        let aOrAn = interval.toLowerCase() === 'octave' ? "an" : "a";
+        assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
+        assistant.ask('<speak>You are correct, the interval is ' + aOrAn + ' ' + interval + '.  Let me know when you\'re ready for another, or if that\'s enough for now.</speak>',
           ['Please let me know when you\'re ready for another interval, or if you\'ve had enough']);
 
-    }
-    else {
-      assistant.data.numIncorrect ++;
-
-      if (assistant.data.numIncorrect < NUM_ATTEMPTS_ALLOWED) {
-        assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
-        assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl) + '\'/><audio src=\'' +
-            (assistant.data.desc ? assistant.data.mostRecentLowerPitchUrl : assistant.data.mostRecentUpperPitchUrl)  + '\'/></speak>', ['Please tell me the interval you heard']);
       }
       else {
+        assistant.data.numIncorrect ++;
+
+        if (assistant.data.numIncorrect < NUM_ATTEMPTS_ALLOWED) {
+          assistant.setContext(INTERVAL_PLAYED_CONTEXT, 5);
+          assistant.ask('<speak>Sorry, but that is incorrect.  Here is the interval again <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl) + '\'/><audio src=\'' +
+            (assistant.data.desc ? assistant.data.mostRecentLowerPitchUrl : assistant.data.mostRecentUpperPitchUrl)  + '\'/></speak>', ['Please tell me the interval you heard']);
+        }
+        else {
           let correctIntervalName = "unknown";
           switch (assistant.data.mostRecentIntervalSize) {
               case UNISON: correctIntervalName = 'unison'; break;
@@ -174,12 +187,12 @@ app.post('/', function (req, res) {
               case MAJOR_SEVENTH: correctIntervalName = 'major seventh'; break;
               case OCTAVE: correctIntervalName = 'octave'; break;
           }
-        assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
-        assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl)  + '\'/><audio src=\'' +
+          assistant.setContext(INSTRUCTED_ABOUT_PRACTICE_CONTEXT, 5);
+          assistant.ask('<speak>Incorrect again. Please listen to the interval one more time and I\'ll tell you the answer <audio src=\'' + (assistant.data.desc ? assistant.data.mostRecentUpperPitchUrl : assistant.data.mostRecentLowerPitchUrl)  + '\'/><audio src=\'' +
             (assistant.data.desc ? assistant.data.mostRecentLowerPitchUrl : assistant.data.mostRecentUpperPitchUrl)  + '\'/> The interval is a ' + correctIntervalName + '.  Please let me know when you\'re ready for another interval, or if you\'ve had enough.</speak>');
+        }
       }
     }
-  }
 
   // =========== TRIAD-RELATED CODE ==========
 
